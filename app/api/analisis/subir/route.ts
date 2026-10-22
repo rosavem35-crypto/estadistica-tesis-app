@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/supabase/session';
 import { validarArchivoDatos } from '@/lib/validate';
 import { subirArchivoOriginal } from '@/lib/storage';
-import { DEV_USER_ID } from '@/lib/devUser';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// TODO Fase 3: reemplazar DEV_USER_ID por requireUser() y validar la
-// casilla de privacidad server-side también (hoy solo se exige en la UI).
 export async function POST(request: Request) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
+
   const form = await request.formData();
   const file = form.get('archivo');
   const privacidadConfirmada = form.get('privacidadConfirmada') === 'true';
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
   const { data: analisis, error: insertError } = await admin
     .from('analisis')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: user.id,
       tipo_analisis: 'perfil_datos',
       nombre_archivo_original: file.name,
       estado: 'pendiente',
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const path = await subirArchivoOriginal(admin, DEV_USER_ID, analisis.id, file.name, buffer);
+    const path = await subirArchivoOriginal(admin, user.id, analisis.id, file.name, buffer);
     await admin.from('analisis').update({ archivo_original_path: path }).eq('id', analisis.id);
   } catch (err) {
     await admin

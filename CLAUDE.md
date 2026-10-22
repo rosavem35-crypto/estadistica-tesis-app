@@ -29,29 +29,42 @@ Construcción en progreso siguiendo las fases del plan en
 `/root/.claude/plans/wild-sprouting-crystal.md`:
 
 - [x] Fase 0 — scaffold de Next.js
-- [~] Fase 1 — extender el skill con alfa de Cronbach, subirlo a la Skills API, probar el motor.
-  Código del motor (Skills API + runAnalysis) listo; falta copiar el skill
-  extendido al repo (`skill/estadistica-tesis-latam/`) y correr la prueba
-  E2E real.
-- [~] Fase 2 — UI de subir → perfilar → elegir análisis → resultados (sin auth/pagos).
-  Código completo (migración, rutas API, páginas); sin verificar en vivo —
-  falta un proyecto de Supabase propio para este producto.
-- [ ] Fase 3 — auth + Hotmart + créditos
-- [ ] Fase 4 — pulido: todos los tipos de análisis en la UI guiada
+- [x] Fase 1 — skill extendido con alfa de Cronbach (`confiabilidad_escala`,
+  45/45 pruebas en verde contra pingouin), copiado a `skill/estadistica-tesis-latam/`.
+  El código del motor (Skills API + `runAnalysis`) está listo; falta subir
+  el skill de verdad y correr la prueba E2E real (bloqueado por la API key,
+  ver pendientes externos).
+- [x] Fase 2 — UI de subir → perfilar → elegir análisis → resultados.
+  Código completo; sin verificar en vivo todavía (falta un proyecto de
+  Supabase propio).
+- [x] Fase 3 — auth (magic link + contraseña, invite-only), migración
+  `002_hardening.sql` (REVOKE UPDATE + `add_credits_used()` SECURITY
+  DEFINER), webhook de Hotmart (`lib/hotmart/process.ts`, función pura
+  testeada con deps falsos), `requireUser()` ya wireado en todas las rutas
+  de `analisis` (reemplazó `lib/devUser.ts`, que se eliminó). Sin verificar
+  en vivo — falta el proyecto de Supabase y el producto de Hotmart reales.
+- [~] Fase 4 — pulido: el árbol de decisión (`lib/engine/decisionTree.ts`)
+  y el formulario genérico (`app/subir/[id]/elegir/page.tsx`) ya cubren los
+  12 tipos de análisis del skill (incluida confiabilidad). Queda como
+  mejora, no como bloqueo: formularios dedicados por tipo (en vez del
+  formulario genérico), página de historial, observabilidad de costo.
 
 ## Pendientes externos (solo el usuario puede hacerlos)
 
 - [ ] Agregar `ANTHROPIC_API_KEY_ESTADISTICA` en la configuración de
-      secretos del entorno (separada de la key de Marco Teórico).
-- [ ] Crear un proyecto de Supabase nuevo (separado del de Marco Teórico)
-      y correr `supabase/migrations/001_initial_schema.sql`; agregar
-      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y
-      `SUPABASE_SERVICE_ROLE_KEY` al entorno. Para la Fase 2 (sin auth)
-      además hace falta sembrar a mano un usuario de desarrollo con id
-      `00000000-0000-0000-0000-000000000001` (ver `lib/devUser.ts`) en
-      `auth.users` y `public.users`.
-- [ ] (Fase 3) Crear el producto nuevo en Hotmart y su webhook, separado
-      del de Marco Teórico.
+      secretos del entorno (separada de la key de Marco Teórico). **Bloquea
+      la Fase 1d** (prueba real del motor).
+- [ ] Crear un proyecto de Supabase nuevo (separado del de Marco Teórico),
+      correr `supabase/migrations/001_initial_schema.sql` y
+      `002_hardening.sql`, y agregar `NEXT_PUBLIC_SUPABASE_URL`,
+      `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` al
+      entorno. **Bloquea la verificación en vivo de las Fases 2 y 3.**
+- [ ] Crear el producto nuevo en Hotmart y su webhook (separado del de
+      Marco Teórico); agregar `HOTMART_WEBHOOK_SECRET` y, si se vende un
+      plan "pro", `HOTMART_PRO_PRODUCT_IDS`.
+- [ ] Confirmar los números de créditos por plan en `lib/hotmart/planes.ts`
+      (`basico: 20`, `pro: 60` son un placeholder de arranque, no una
+      decisión de negocio confirmada).
 
 ## Comandos
 

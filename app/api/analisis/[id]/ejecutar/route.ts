@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { toFile } from '@anthropic-ai/sdk';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/supabase/session';
 import { getAnthropicClient } from '@/lib/anthropic/client';
 import { runAnalysis } from '@/lib/engine/runAnalysis';
 import { downloadOutputFiles } from '@/lib/engine/downloadOutputs';
@@ -41,10 +42,11 @@ function categorizarArchivo(nombre: string): 'md' | 'docx' | 'xlsx' | 'png' | 'o
   return 'otro';
 }
 
-// TODO Fase 3: reemplazar DEV_USER_ID por requireUser(), descontar 1
-// crédito al terminar con éxito (nunca antes de saber que el análisis
-// funcionó), y rechazar si no quedan créditos.
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
+
   const body = BodySchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json({ error: 'Cuerpo inválido.' }, { status: 400 });
@@ -62,10 +64,24 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 
   const admin = createAdminClient();
+
+  const { data: usuario } = await admin
+    .from('users')
+    .select('creditos_usados, creditos_limite')
+    .eq('id', user.id)
+    .single();
+  if (!usuario || usuario.creditos_usados >= usuario.creditos_limite) {
+    return NextResponse.json(
+      { error: 'No tienes créditos disponibles. Compra o renueva para seguir analizando.' },
+      { status: 402 }
+    );
+  }
+
   const { data: analisis, error } = await admin
     .from('analisis')
     .select('id, user_id, nombre_archivo_original, archivo_original_path, container_id')
     .eq('id', params.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !analisis) {
@@ -119,6 +135,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     await admin.from('analisis').update(actualizacion).eq('id', analisis.id);
     await borrarArchivoOriginal(admin, analisis.archivo_original_path);
+
+    // Solo se descuenta el crédito una vez que sabemos que el análisis
+    // funcionó — nunca antes. Usa el cliente autenticado (no el admin):
+    // add_credits_used() es SECURITY DEFINER y se autoescopea a auth.uid().
+    const { error: creditoError } = await auth.supabase.rpc('add_credits_used', { p_amount: 1 });
+    if (creditoError) {
+      console.error('No se pudo descontar el crédito:', creditoError.message);
+    }
 
     return NextResponse.json({ id: analisis.id, definicion: definicion.etiqueta });
   } catch (err) {

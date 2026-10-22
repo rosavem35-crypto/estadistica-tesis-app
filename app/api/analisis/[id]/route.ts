@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/supabase/session';
 import { urlFirmadaReporte } from '@/lib/storage';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// TODO Fase 3: reemplazar DEV_USER_ID por requireUser() y scope real.
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
+
   const admin = createAdminClient();
   const { data: analisis, error } = await admin
     .from('analisis')
@@ -14,6 +18,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       'id, tipo_analisis, estado, error_detalle, resultado_resumen, reporte_md_path, reporte_docx_path, reporte_xlsx_path, figuras_paths, perfil_columnas'
     )
     .eq('id', params.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !analisis) {

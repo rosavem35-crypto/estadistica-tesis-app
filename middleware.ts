@@ -1,13 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
+import { safeRedirectPath } from '@/lib/access';
 
-// Placeholder: la Fase 3 del plan (/root/.claude/plans/wild-sprouting-crystal.md)
-// agrega aquí el guard real de sesión (mismo patrón que marco-teorico-app:
-// lib/supabase/middleware.ts + updateSession). Por ahora no hay auth ni rutas
-// protegidas, así que el matcher no coincide con nada.
-export function middleware() {
-  return NextResponse.next();
+const RUTAS_PROTEGIDAS = ['/subir', '/analisis', '/historial'];
+
+export async function middleware(request: NextRequest) {
+  const { response, user } = await updateSession(request);
+  const { pathname } = request.nextUrl;
+
+  const protegida = RUTAS_PROTEGIDAS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (protegida && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/iniciar-sesion';
+    url.search = `?next=${encodeURIComponent(safeRedirectPath(pathname))}`;
+    return NextResponse.redirect(url);
+  }
+  return response;
 }
 
 export const config = {
-  matcher: [],
+  matcher: ['/((?!_next|favicon.ico|api/webhooks/hotmart|api/health|auth|iniciar-sesion|sin-acceso|$).*)'],
 };

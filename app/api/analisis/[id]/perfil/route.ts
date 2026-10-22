@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { toFile } from '@anthropic-ai/sdk';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/supabase/session';
 import { getAnthropicClient } from '@/lib/anthropic/client';
 import { runAnalysis } from '@/lib/engine/runAnalysis';
 import { downloadOutputFiles } from '@/lib/engine/downloadOutputs';
@@ -11,13 +12,17 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-// TODO Fase 3: reemplazar DEV_USER_ID por requireUser() y scope real.
 export async function POST(_request: Request, { params }: { params: { id: string } }) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
+
   const admin = createAdminClient();
   const { data: analisis, error } = await admin
     .from('analisis')
     .select('id, nombre_archivo_original, archivo_original_path, container_id')
     .eq('id', params.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !analisis) {
