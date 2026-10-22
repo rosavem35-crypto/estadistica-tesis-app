@@ -29,10 +29,29 @@ Construcción en progreso siguiendo las fases del plan en
 `/root/.claude/plans/wild-sprouting-crystal.md`:
 
 - [x] Fase 0 — scaffold de Next.js
-- [ ] Fase 1 — extender el skill con alfa de Cronbach, subirlo a la Skills API, probar el motor
-- [ ] Fase 2 — UI de subir → perfilar → elegir análisis → resultados (sin auth/pagos)
+- [~] Fase 1 — extender el skill con alfa de Cronbach, subirlo a la Skills API, probar el motor.
+  Código del motor (Skills API + runAnalysis) listo; falta copiar el skill
+  extendido al repo (`skill/estadistica-tesis-latam/`) y correr la prueba
+  E2E real.
+- [~] Fase 2 — UI de subir → perfilar → elegir análisis → resultados (sin auth/pagos).
+  Código completo (migración, rutas API, páginas); sin verificar en vivo —
+  falta un proyecto de Supabase propio para este producto.
 - [ ] Fase 3 — auth + Hotmart + créditos
 - [ ] Fase 4 — pulido: todos los tipos de análisis en la UI guiada
+
+## Pendientes externos (solo el usuario puede hacerlos)
+
+- [ ] Agregar `ANTHROPIC_API_KEY_ESTADISTICA` en la configuración de
+      secretos del entorno (separada de la key de Marco Teórico).
+- [ ] Crear un proyecto de Supabase nuevo (separado del de Marco Teórico)
+      y correr `supabase/migrations/001_initial_schema.sql`; agregar
+      `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y
+      `SUPABASE_SERVICE_ROLE_KEY` al entorno. Para la Fase 2 (sin auth)
+      además hace falta sembrar a mano un usuario de desarrollo con id
+      `00000000-0000-0000-0000-000000000001` (ver `lib/devUser.ts`) en
+      `auth.users` y `public.users`.
+- [ ] (Fase 3) Crear el producto nuevo en Hotmart y su webhook, separado
+      del de Marco Teórico.
 
 ## Comandos
 
