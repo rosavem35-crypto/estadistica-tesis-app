@@ -87,7 +87,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (error || !analisis) {
     return NextResponse.json({ error: 'Análisis no encontrado.' }, { status: 404 });
   }
-  if (!analisis.archivo_original_path) {
+  if (definicion.requiereArchivo && !analisis.archivo_original_path) {
     return NextResponse.json({ error: 'El análisis no tiene un archivo asociado.' }, { status: 400 });
   }
 
@@ -97,14 +97,18 @@ export async function POST(request: Request, { params }: { params: { id: string 
     .eq('id', analisis.id);
 
   try {
-    const buffer = await descargarArchivoOriginal(admin, analisis.archivo_original_path);
-    const client = getAnthropicClient();
-    const uploaded = await client.files.upload({
-      file: await toFile(buffer, analisis.nombre_archivo_original ?? 'datos.xlsx'),
-    });
+    let fileId: string | undefined;
+    if (definicion.requiereArchivo && analisis.archivo_original_path) {
+      const buffer = await descargarArchivoOriginal(admin, analisis.archivo_original_path);
+      const client = getAnthropicClient();
+      const uploaded = await client.files.upload({
+        file: await toFile(buffer, analisis.nombre_archivo_original ?? 'datos.xlsx'),
+      });
+      fileId = uploaded.id;
+    }
 
     const resultado = await runAnalysis({
-      fileId: uploaded.id,
+      fileId,
       tipoAnalisis,
       parametros: body.data.parametros,
       nombreArchivoOriginal: analisis.nombre_archivo_original ?? 'datos',
@@ -134,7 +138,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     await admin.from('analisis').update(actualizacion).eq('id', analisis.id);
-    await borrarArchivoOriginal(admin, analisis.archivo_original_path);
+    if (analisis.archivo_original_path) {
+      await borrarArchivoOriginal(admin, analisis.archivo_original_path);
+    }
 
     // Solo se descuenta el crédito una vez que sabemos que el análisis
     // funcionó — nunca antes. Usa el cliente autenticado (no el admin):

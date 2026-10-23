@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 import { safeRedirectPath } from '@/lib/access';
 
-const RUTAS_PROTEGIDAS = ['/subir', '/analisis', '/historial'];
+const RUTAS_PROTEGIDAS = ['/subir', '/analisis', '/historial', '/planificar'];
 
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);

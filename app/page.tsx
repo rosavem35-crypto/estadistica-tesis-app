@@ -9,12 +9,15 @@ export default function HomePage() {
         resultados lista para pegar en tu tesis o artículo — sin necesitar SPSS,
         Jamovi ni R.
       </p>
-      <div className="mt-8 flex items-center gap-4">
+      <div className="mt-8 flex flex-wrap items-center gap-4">
         <Link
           href="/subir"
           className="inline-block rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
         >
           Subir mis datos
+        </Link>
+        <Link href="/planificar" className="text-sm text-slate-500 underline">
+          Calcular tamaño de muestra
         </Link>
         <Link href="/iniciar-sesion" className="text-sm text-slate-500 underline">
           Iniciar sesión

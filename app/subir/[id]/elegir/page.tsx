@@ -2,8 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ANALISIS_DISPONIBLES, definicionDe, type CampoParametro } from '@/lib/engine/decisionTree';
+import { ANALISIS_DISPONIBLES, ETIQUETAS_CATEGORIA, definicionDe, type DefinicionAnalisis } from '@/lib/engine/decisionTree';
+import { CampoInput } from '@/components/analisis/CampoInput';
 import type { PerfilColumna, TipoAnalisis } from '@/types/analisis';
+
+// Esta página siempre viene de /subir (hay un archivo asociado), así que
+// solo se ofrecen los tipos que necesitan datos. muestra_poblacion y
+// potencia_muestra viven en /planificar (no piden archivo).
+const OPCIONES = ANALISIS_DISPONIBLES.filter((d) => d.requiereArchivo);
+const CATEGORIAS: DefinicionAnalisis['categoria'][] = ['diagnostico', 'comparar', 'relacionar', 'predecir'];
 
 export default function ElegirPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -22,57 +29,6 @@ export default function ElegirPage({ params }: { params: { id: string } }) {
 
   function actualizarValor(nombre: string, valor: unknown) {
     setValores((prev) => ({ ...prev, [nombre]: valor }));
-  }
-
-  function renderCampo(campo: CampoParametro) {
-    if (campo.tipo === 'columna') {
-      return (
-        <select
-          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-          value={(valores[campo.nombre] as string) ?? ''}
-          onChange={(e) => actualizarValor(campo.nombre, e.target.value)}
-        >
-          <option value="">Selecciona una columna...</option>
-          {columnas.map((c) => (
-            <option key={c.nombre} value={c.nombre}>
-              {c.nombre} ({c.tipoDetectado})
-            </option>
-          ))}
-        </select>
-      );
-    }
-    if (campo.tipo === 'columnas') {
-      return (
-        <select
-          multiple
-          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-          value={(valores[campo.nombre] as string[]) ?? []}
-          onChange={(e) =>
-            actualizarValor(
-              campo.nombre,
-              Array.from(e.target.selectedOptions).map((o) => o.value)
-            )
-          }
-        >
-          {columnas.map((c) => (
-            <option key={c.nombre} value={c.nombre}>
-              {c.nombre} ({c.tipoDetectado})
-            </option>
-          ))}
-        </select>
-      );
-    }
-    return (
-      <input
-        type={campo.tipo === 'numero' ? 'number' : 'text'}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        value={(valores[campo.nombre] as string) ?? ''}
-        onChange={(e) =>
-          actualizarValor(campo.nombre, campo.tipo === 'numero' ? Number(e.target.value) : e.target.value)
-        }
-        placeholder={campo.ayuda}
-      />
-    );
   }
 
   async function enviar() {
@@ -97,38 +53,56 @@ export default function ElegirPage({ params }: { params: { id: string } }) {
   return (
     <main className="max-w-xl mx-auto px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight">¿Qué quieres analizar?</h1>
+      <p className="mt-2 text-sm text-slate-500">
+        ¿Necesitas calcular un tamaño de muestra sin subir datos?{' '}
+        <a href="/planificar" className="underline">
+          Ve directo a planificación
+        </a>
+        .
+      </p>
 
-      <div className="mt-6 space-y-2">
-        {ANALISIS_DISPONIBLES.map((def) => (
-          <label
-            key={def.tipo}
-            className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800"
-          >
-            <input
-              type="radio"
-              name="tipo"
-              checked={tipo === def.tipo}
-              onChange={() => {
-                setTipo(def.tipo);
-                setValores({});
-              }}
-              className="mt-0.5"
-            />
-            <span>
-              <span className="font-medium">{def.etiqueta}</span>
-              <br />
-              <span className="text-slate-500">{def.pregunta}</span>
-            </span>
-          </label>
-        ))}
-      </div>
+      {CATEGORIAS.map((cat) => {
+        const opciones = OPCIONES.filter((d) => d.categoria === cat);
+        if (opciones.length === 0) return null;
+        return (
+          <div key={cat} className="mt-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {ETIQUETAS_CATEGORIA[cat]}
+            </h2>
+            <div className="mt-2 space-y-2">
+              {opciones.map((def) => (
+                <label
+                  key={def.tipo}
+                  className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800"
+                >
+                  <input
+                    type="radio"
+                    name="tipo"
+                    checked={tipo === def.tipo}
+                    onChange={() => {
+                      setTipo(def.tipo);
+                      setValores({});
+                    }}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="font-medium">{def.etiqueta}</span>
+                    <br />
+                    <span className="text-slate-500">{def.pregunta}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      })}
 
       {tipo && (
         <div className="mt-6 space-y-4">
           {definicionDe(tipo).campos.map((campo) => (
             <div key={campo.nombre}>
               <label className="block text-sm font-medium">{campo.etiqueta}</label>
-              {renderCampo(campo)}
+              <CampoInput campo={campo} valor={valores[campo.nombre]} columnas={columnas} onChange={actualizarValor} />
             </div>
           ))}
         </div>

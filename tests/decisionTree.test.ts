@@ -18,3 +18,15 @@ test('definicionDe lanza error para un tipo inexistente', () => {
   // @ts-expect-error -- tipo inválido a propósito
   assert.throws(() => definicionDe('no_existe'));
 });
+
+test('solo muestra_poblacion y potencia_muestra no requieren archivo', () => {
+  const sinArchivo = ANALISIS_DISPONIBLES.filter((d) => !d.requiereArchivo).map((d) => d.tipo);
+  assert.deepEqual(new Set(sinArchivo), new Set(['muestra_poblacion', 'potencia_muestra']));
+});
+
+test('cada definición tiene una categoría válida', () => {
+  const validas = new Set(['diagnostico', 'comparar', 'relacionar', 'predecir', 'planificar']);
+  for (const def of ANALISIS_DISPONIBLES) {
+    assert.ok(validas.has(def.categoria), `${def.tipo} tiene categoría inválida: ${def.categoria}`);
+  }
+});

@@ -35,10 +35,13 @@ export const FUNCION_POR_TIPO: Record<TipoAnalisis, string> = {
 export function buildAnalysisPrompt(
   tipoAnalisis: TipoAnalisis,
   parametros: Record<string, unknown>,
-  opts: { nombreArchivoOriginal: string; salida?: string } = { nombreArchivoOriginal: 'datos' }
+  opts: { nombreArchivoOriginal: string; salida?: string; conArchivo?: boolean } = {
+    nombreArchivoOriginal: 'datos',
+  }
 ): string {
   const funcion = FUNCION_POR_TIPO[tipoAnalisis];
   const salida = opts.salida ?? 'resultados';
+  const conArchivo = opts.conArchivo ?? true;
 
   const pasoPerfilJson =
     tipoAnalisis === 'perfil_datos'
@@ -50,11 +53,16 @@ export function buildAnalysisPrompt(
         `además de los informes normales (.md/.xlsx/.docx), no en lugar de ellos.`
       : '';
 
+  const pasosDatos = conArchivo
+    ? `1. Hay un archivo de datos adjunto a este contenedor (subido como attachment del mensaje, nombre original aproximado "${opts.nombreArchivoOriginal}"). Localízalo explorando el contenedor (por ejemplo, revisa el directorio de archivos de entrada/adjuntos con el bash tool) — no asumas una ruta fija.
+2. Cárgalo con \`cargar_datos()\` del skill (acepta .xlsx/.csv). Si no encuentras el archivo o no puedes leerlo, DETENTE y reporta el error exacto en texto plano — no inventes datos ni resultados.
+3. Ejecuta exactamente la función \`${funcion}\` de \`tesis_stats.py\` con estos parámetros (en formato de los argumentos de esa función en Python, tal como se documentan en el skill):`
+    : `1. Esta función NO necesita un archivo de datos (es un cálculo de planificación de muestra) — no busques ni cargues ningún archivo.
+2. Ejecuta exactamente la función \`${funcion}\` de \`tesis_stats.py\` con estos parámetros (en formato de los argumentos de esa función en Python, tal como se documentan en el skill):`;
+
   return `Usa el skill "estadistica-tesis-latam" para este análisis. Sigue exactamente su SKILL.md (flujo, reglas de honestidad, formato APA 7 en español).
 
-1. Hay un archivo de datos adjunto a este contenedor (subido como attachment del mensaje, nombre original aproximado "${opts.nombreArchivoOriginal}"). Localízalo explorando el contenedor (por ejemplo, revisa el directorio de archivos de entrada/adjuntos con el bash tool) — no asumas una ruta fija.
-2. Cárgalo con \`cargar_datos()\` del skill (acepta .xlsx/.csv). Si no encuentras el archivo o no puedes leerlo, DETENTE y reporta el error exacto en texto plano — no inventes datos ni resultados.
-3. Ejecuta exactamente la función \`${funcion}\` de \`tesis_stats.py\` con estos parámetros (en formato de los argumentos de esa función en Python, tal como se documentan en el skill):
+${pasosDatos}
 \`\`\`json
 ${JSON.stringify(parametros, null, 2)}
 \`\`\`

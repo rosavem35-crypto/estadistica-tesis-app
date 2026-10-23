@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 interface EstadoAnalisis {
@@ -105,6 +106,15 @@ export default function AnalisisPage({ params }: { params: { id: string } }) {
           ))}
         </div>
       )}
+
+      <div className="mt-10 flex gap-4 text-sm">
+        <Link href="/subir" className="underline">
+          Hacer otro análisis
+        </Link>
+        <Link href="/historial" className="underline">
+          Ver tu historial
+        </Link>
+      </div>
     </main>
   );
 }

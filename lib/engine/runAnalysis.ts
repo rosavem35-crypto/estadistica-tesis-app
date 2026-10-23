@@ -9,8 +9,12 @@ const MODEL = 'claude-sonnet-5-5';
 const CODE_EXECUTION_TOOL = { type: 'code_execution_20260521' as const, name: 'code_execution' as const };
 
 export interface RunAnalysisInput {
-  /** file_id (Files API) del archivo de datos ya subido por el usuario. */
-  fileId: string;
+  /**
+   * file_id (Files API) del archivo de datos ya subido por el usuario.
+   * Omitir para los tipos que no necesitan datos (muestra_poblacion,
+   * potencia_muestra) — ver `requiereArchivo` en decisionTree.ts.
+   */
+  fileId?: string;
   tipoAnalisis: TipoAnalisis;
   parametros: Record<string, unknown>;
   nombreArchivoOriginal: string;
@@ -51,10 +55,16 @@ export async function runAnalysis(input: RunAnalysisInput): Promise<RunAnalysisR
     );
   }
 
+  const conArchivo = !!input.fileId;
   const prompt = buildAnalysisPrompt(input.tipoAnalisis, input.parametros, {
     nombreArchivoOriginal: input.nombreArchivoOriginal,
     salida: input.salida,
+    conArchivo,
   });
+
+  const content: Array<{ type: 'container_upload'; file_id: string } | { type: 'text'; text: string }> = [];
+  if (input.fileId) content.push({ type: 'container_upload', file_id: input.fileId });
+  content.push({ type: 'text', text: prompt });
 
   const response = await client.messages.create({
     model: MODEL,
@@ -63,15 +73,7 @@ export async function runAnalysis(input: RunAnalysisInput): Promise<RunAnalysisR
       ? { id: input.containerId }
       : { skills: [{ type: 'custom', skill_id: skillId!, version: 'latest' }] },
     tools: [CODE_EXECUTION_TOOL],
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'container_upload', file_id: input.fileId },
-          { type: 'text', text: prompt },
-        ],
-      },
-    ],
+    messages: [{ role: 'user', content }],
   });
 
   const outputFiles: ArchivoDeSalida[] = [];
