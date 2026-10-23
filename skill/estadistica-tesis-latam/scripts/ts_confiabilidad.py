@@ -79,8 +79,13 @@ def confiabilidad_escala(df: pd.DataFrame, items: list, etiqueta_escala: str | N
                            "Alfa si se elimina el ítem": a_sin})
     tabla_items = pd.DataFrame(filas_item)
 
+    # k y n se guardan como str: una tabla 100% numérica pierde el tipo entero
+    # al iterar fila por fila con df.iterrows() (pandas sube toda la fila a
+    # float si no hay ninguna columna de texto) y _fmt_celda() los mostraría
+    # como "5.00" en vez de "5".
     tabla_fiabilidad = pd.DataFrame([{
-        "Alfa de Cronbach": alfa_total, "IC 95% inf.": lo, "IC 95% sup.": hi, "N° de ítems": k, "n": n,
+        "Alfa de Cronbach": alfa_total, "IC 95% inf.": lo, "IC 95% sup.": hi,
+        "N° de ítems": str(k), "n": str(n),
     }])
 
     avisos = []

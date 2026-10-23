@@ -19,3 +19,4 @@ skill/estadistica-tesis-latam/**/__pycache__/
 skill/estadistica-tesis-latam/.pytest_cache/
 skill/estadistica-tesis-latam/resultados_estadistica/
 skill/estadistica-tesis-latam/venv/
+.e2e-output/

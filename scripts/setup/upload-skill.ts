@@ -21,7 +21,7 @@ import { getAnthropicClient } from '@/lib/anthropic/client';
 const SKILL_DIR = join(process.cwd(), 'skill', 'estadistica-tesis-latam');
 const SKILL_NAME = 'estadistica-tesis-latam';
 
-const EXCLUDE_DIRS = new Set(['__pycache__', '.pytest_cache', '.git']);
+const EXCLUDE_DIRS = new Set(['__pycache__', '.pytest_cache', '.git', 'resultados_estadistica', 'venv']);
 
 function listFiles(dir: string, base: string): string[] {
   const out: string[] = [];
