@@ -31,9 +31,10 @@ Construcción en progreso siguiendo las fases del plan en
 - [x] Fase 0 — scaffold de Next.js
 - [x] Fase 1 — skill extendido con alfa de Cronbach (`confiabilidad_escala`,
   45/45 pruebas en verde contra pingouin), copiado a `skill/estadistica-tesis-latam/`.
-  El código del motor (Skills API + `runAnalysis`) está listo; falta subir
-  el skill de verdad y correr la prueba E2E real (bloqueado por la API key,
-  ver pendientes externos).
+  Fase 1d verificada en vivo: `scripts/setup/test-e2e-analysis.ts` corrió
+  `confiabilidad_escala` y `comparar_grupos` contra la API real de Anthropic
+  (container.skills + code_execution), con narrativa APA 7, tablas, figura y
+  `.docx`/`.xlsx` generados correctamente.
 - [x] Fase 2 — UI de subir → perfilar → elegir análisis → resultados.
   Código completo; sin verificar en vivo todavía (falta un proyecto de
   Supabase propio).
@@ -51,14 +52,18 @@ Construcción en progreso siguiendo las fases del plan en
 
 ## Pendientes externos (solo el usuario puede hacerlos)
 
-- [ ] Agregar `ANTHROPIC_API_KEY_ESTADISTICA` en la configuración de
-      secretos del entorno (separada de la key de Marco Teórico). **Bloquea
-      la Fase 1d** (prueba real del motor).
-- [ ] Crear un proyecto de Supabase nuevo (separado del de Marco Teórico),
-      correr `supabase/migrations/001_initial_schema.sql` y
-      `002_hardening.sql`, y agregar `NEXT_PUBLIC_SUPABASE_URL`,
-      `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` al
-      entorno. **Bloquea la verificación en vivo de las Fases 2 y 3.**
+- [x] Agregar `ANTHROPIC_API_KEY_ESTADISTICA` y `ANTHROPIC_SKILL_ID` en la
+      configuración de secretos del entorno. Verificado en vivo (Fase 1d).
+- [ ] Las credenciales de Supabase (`NEXT_PUBLIC_SUPABASE_URL`,
+      `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) ya están
+      en el entorno, pero **el host `*.supabase.co` está bloqueado por la
+      política de red de este entorno de nube** — no se pudo ejecutar ni
+      verificar nada contra Supabase (ver nota abajo). Falta además: correr
+      `supabase/migrations/001_initial_schema.sql` y `002_hardening.sql`
+      (no alcanza con las tres variables de arriba — hace falta la
+      contraseña de la base de datos o un access token de Supabase para
+      correr las migraciones; sino, correrlas a mano desde el SQL Editor
+      del proyecto). **Bloquea la verificación en vivo de las Fases 2 y 3.**
 - [ ] Crear el producto nuevo en Hotmart y su webhook (separado del de
       Marco Teórico); agregar `HOTMART_WEBHOOK_SECRET` y, si se vende un
       plan "pro", `HOTMART_PRO_PRODUCT_IDS`.
