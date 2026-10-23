@@ -36,14 +36,23 @@ Construcción en progreso siguiendo las fases del plan en
   (container.skills + code_execution), con narrativa APA 7, tablas, figura y
   `.docx`/`.xlsx` generados correctamente.
 - [x] Fase 2 — UI de subir → perfilar → elegir análisis → resultados.
-  Código completo; sin verificar en vivo todavía (falta un proyecto de
-  Supabase propio).
+  Verificada en vivo a nivel API (login real, `POST /api/analisis/subir`,
+  `POST .../perfil`, `POST .../ejecutar`, `GET /api/analisis/[id]` con URLs
+  firmadas de Storage que descargan el informe real) contra el proyecto de
+  Supabase correcto (`qfybuexqwljitubgysjk`, ver nota de red más abajo). Las
+  páginas (`/subir`, `/iniciar-sesion`, etc.) renderizan y compilan bien,
+  pero la navegación completa en navegador a las rutas protegidas no se pudo
+  probar en *esta sesión de nube* por una limitación del sandbox, no de la
+  app — ver "Nota: dev local en este contenedor" abajo.
 - [x] Fase 3 — auth (magic link + contraseña, invite-only), migración
   `002_hardening.sql` (REVOKE UPDATE + `add_credits_used()` SECURITY
   DEFINER), webhook de Hotmart (`lib/hotmart/process.ts`, función pura
   testeada con deps falsos), `requireUser()` ya wireado en todas las rutas
-  de `analisis` (reemplazó `lib/devUser.ts`, que se eliminó). Sin verificar
-  en vivo — falta el proyecto de Supabase y el producto de Hotmart reales.
+  de `analisis` (reemplazó `lib/devUser.ts`, que se eliminó). Verificado en
+  vivo: login con contraseña, `requireUser()` rechaza sin sesión (401) y
+  acepta con sesión + `active_until` vigente, `add_credits_used()` descontó
+  1 crédito correctamente tras un análisis real. Falta solo el producto de
+  Hotmart real (ver pendientes externos).
 - [~] Fase 4 — pulido: el árbol de decisión (`lib/engine/decisionTree.ts`)
   y el formulario genérico (`app/subir/[id]/elegir/page.tsx`) ya cubren los
   12 tipos de análisis del skill (incluida confiabilidad). Queda como
@@ -54,22 +63,45 @@ Construcción en progreso siguiendo las fases del plan en
 
 - [x] Agregar `ANTHROPIC_API_KEY_ESTADISTICA` y `ANTHROPIC_SKILL_ID` en la
       configuración de secretos del entorno. Verificado en vivo (Fase 1d).
-- [ ] Las credenciales de Supabase (`NEXT_PUBLIC_SUPABASE_URL`,
-      `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) ya están
-      en el entorno, pero **el host `*.supabase.co` está bloqueado por la
-      política de red de este entorno de nube** — no se pudo ejecutar ni
-      verificar nada contra Supabase (ver nota abajo). Falta además: correr
-      `supabase/migrations/001_initial_schema.sql` y `002_hardening.sql`
-      (no alcanza con las tres variables de arriba — hace falta la
-      contraseña de la base de datos o un access token de Supabase para
-      correr las migraciones; sino, correrlas a mano desde el SQL Editor
-      del proyecto). **Bloquea la verificación en vivo de las Fases 2 y 3.**
+- [x] Proyecto de Supabase creado y migraciones corridas en vivo
+      (`001_initial_schema.sql` + `002_hardening.sql`) contra el proyecto
+      **correcto**: `estadistica-tesis-app`, ref `qfybuexqwljitubgysjk`.
+      **IMPORTANTE:** la cuenta tiene además otro proyecto sin nombre
+      (ref `fqygmsygyddkfyevzday`, "rosavem35-crypto's Project") — las
+      variables de entorno del entorno de nube (`NEXT_PUBLIC_SUPABASE_URL`,
+      `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) apuntan
+      a ese proyecto equivocado, no al correcto. **Falta que el usuario
+      actualice esas tres variables en la configuración de secretos del
+      entorno** con los valores del proyecto `qfybuexqwljitubgysjk`
+      (pedírselos de nuevo o sacarlos del dashboard de Supabase →
+      Project Settings → API). Hasta que eso se corrija, cualquier sesión
+      nueva seguirá apuntando al proyecto equivocado por defecto.
 - [ ] Crear el producto nuevo en Hotmart y su webhook (separado del de
       Marco Teórico); agregar `HOTMART_WEBHOOK_SECRET` y, si se vende un
       plan "pro", `HOTMART_PRO_PRODUCT_IDS`.
 - [ ] Confirmar los números de créditos por plan en `lib/hotmart/planes.ts`
       (`basico: 20`, `pro: 60` son un placeholder de arranque, no una
       decisión de negocio confirmada).
+
+## Nota: dev local en este contenedor (sandbox de Claude Code en la nube)
+
+Esto es específico de correr `npm run dev` **dentro de una sesión de nube**
+con la política de red restringida a dominios permitidos — no aplica a un
+deploy real (Vercel) ni a desarrollo en la máquina del usuario:
+
+- El `fetch` nativo de Node no respeta `HTTPS_PROXY` por default. Hay que
+  arrancar el server con `NODE_USE_ENV_PROXY=1` (Node ≥22.21), si no,
+  cualquier llamada server-side a Supabase (`requireUser()`, el middleware)
+  falla con `fetch failed` aunque las credenciales sean correctas.
+- El Edge Runtime de Next.js (donde corre `middleware.ts`) parece no heredar
+  el proxy ni con esa variable — la navegación del navegador a rutas
+  protegidas (`/subir`, `/analisis/[id]`, etc.) se queda redirigiendo a
+  `/iniciar-sesion` aunque la sesión sea válida. Las rutas de API bajo
+  `/api/analisis/*` (Node.js runtime, no Edge) sí funcionan bien — por ahí
+  se verificó el flujo completo esta vez. Si hace falta verificar la UI
+  renderizada de punta a punta dentro de una sesión de nube, revisar esto
+  primero (podría necesitar el flag experimental `nodeMiddleware` de
+  Next.js, o probarlo en un entorno con red sin restricciones).
 
 ## Comandos
 
