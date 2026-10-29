@@ -10,12 +10,11 @@ interface Props {
   onChange: (nombre: string, valor: unknown) => void;
 }
 
-/** Un campo de parámetro del formulario de análisis. Las columnas siempre se eligen de una lista — nunca texto libre. */
 export function CampoInput({ campo, valor, columnas, onChange }: Props) {
   if (campo.tipo === 'columna') {
     return (
       <select
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+        className="input-field"
         value={(valor as string) ?? ''}
         onChange={(e) => onChange(campo.nombre, e.target.value)}
       >
@@ -38,14 +37,25 @@ export function CampoInput({ campo, valor, columnas, onChange }: Props) {
       onChange(campo.nombre, Array.from(siguiente));
     }
     return (
-      <div className="mt-1 max-h-48 overflow-y-auto rounded-md border border-slate-300 p-2 dark:border-slate-700">
-        {columnas.length === 0 && <p className="text-xs text-slate-400">No hay columnas disponibles.</p>}
+      <div className="max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-800">
+        {columnas.length === 0 && (
+          <p className="px-2 py-3 text-xs text-slate-400">No hay columnas disponibles.</p>
+        )}
         {columnas.map((c) => (
-          <label key={c.nombre} className="flex items-center gap-2 py-1 text-sm">
-            <input type="checkbox" checked={seleccion.has(c.nombre)} onChange={() => alternar(c.nombre)} />
-            <span>
-              {c.nombre} <span className="text-slate-400">({c.tipoDetectado})</span>
-            </span>
+          <label
+            key={c.nombre}
+            className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
+              seleccion.has(c.nombre) ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={seleccion.has(c.nombre)}
+              onChange={() => alternar(c.nombre)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">{c.nombre}</span>
+            <span className="text-xs text-slate-400">{c.tipoDetectado}</span>
           </label>
         ))}
       </div>
@@ -55,7 +65,7 @@ export function CampoInput({ campo, valor, columnas, onChange }: Props) {
   return (
     <input
       type={campo.tipo === 'numero' ? 'number' : 'text'}
-      className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+      className="input-field"
       value={(valor as string) ?? ''}
       onChange={(e) => onChange(campo.nombre, campo.tipo === 'numero' ? Number(e.target.value) : e.target.value)}
       placeholder={campo.ayuda}

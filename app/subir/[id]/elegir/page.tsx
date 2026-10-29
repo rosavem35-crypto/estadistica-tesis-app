@@ -6,11 +6,15 @@ import { ANALISIS_DISPONIBLES, ETIQUETAS_CATEGORIA, definicionDe, type Definicio
 import { CampoInput } from '@/components/analisis/CampoInput';
 import type { PerfilColumna, TipoAnalisis } from '@/types/analisis';
 
-// Esta página siempre viene de /subir (hay un archivo asociado), así que
-// solo se ofrecen los tipos que necesitan datos. muestra_poblacion y
-// potencia_muestra viven en /planificar (no piden archivo).
 const OPCIONES = ANALISIS_DISPONIBLES.filter((d) => d.requiereArchivo);
 const CATEGORIAS: DefinicionAnalisis['categoria'][] = ['diagnostico', 'comparar', 'relacionar', 'predecir'];
+
+const ICONO_CATEGORIA: Record<string, string> = {
+  diagnostico: '🔍',
+  comparar: '⚖️',
+  relacionar: '🔗',
+  predecir: '🎯',
+};
 
 export default function ElegirPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -51,72 +55,100 @@ export default function ElegirPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <main className="max-w-xl mx-auto px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">¿Qué quieres analizar?</h1>
-      <p className="mt-2 text-sm text-slate-500">
-        ¿Necesitas calcular un tamaño de muestra sin subir datos?{' '}
-        <a href="/planificar" className="underline">
-          Ve directo a planificación
-        </a>
-        .
-      </p>
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <div className="mb-8">
+        <h1 className="section-title">¿Qué quieres analizar?</h1>
+        <p className="mt-2 section-subtitle">
+          Selecciona el tipo de análisis que necesitas para tu investigación.
+          {' '}
+          <a href="/planificar" className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            ¿Solo necesitas calcular muestra? →
+          </a>
+        </p>
+      </div>
 
-      {CATEGORIAS.map((cat) => {
-        const opciones = OPCIONES.filter((d) => d.categoria === cat);
-        if (opciones.length === 0) return null;
-        return (
-          <div key={cat} className="mt-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {ETIQUETAS_CATEGORIA[cat]}
-            </h2>
-            <div className="mt-2 space-y-2">
-              {opciones.map((def) => (
-                <label
-                  key={def.tipo}
-                  className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800"
-                >
-                  <input
-                    type="radio"
-                    name="tipo"
-                    checked={tipo === def.tipo}
-                    onChange={() => {
-                      setTipo(def.tipo);
-                      setValores({});
-                    }}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <span className="font-medium">{def.etiqueta}</span>
-                    <br />
-                    <span className="text-slate-500">{def.pregunta}</span>
-                  </span>
-                </label>
-              ))}
+      <div className="space-y-6">
+        {CATEGORIAS.map((cat) => {
+          const opciones = OPCIONES.filter((d) => d.categoria === cat);
+          if (opciones.length === 0) return null;
+          return (
+            <div key={cat}>
+              <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                <span>{ICONO_CATEGORIA[cat]}</span>
+                {ETIQUETAS_CATEGORIA[cat]}
+              </h2>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {opciones.map((def) => {
+                  const seleccionado = tipo === def.tipo;
+                  return (
+                    <button
+                      key={def.tipo}
+                      type="button"
+                      onClick={() => { setTipo(def.tipo); setValores({}); setError(null); }}
+                      className={`card-hover cursor-pointer p-4 text-left transition-all ${
+                        seleccionado
+                          ? '!ring-2 !ring-indigo-500 !bg-indigo-50/50 dark:!bg-indigo-500/5'
+                          : ''
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">
+                        {def.etiqueta}
+                      </span>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {def.pregunta}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {tipo && (
-        <div className="mt-6 space-y-4">
-          {definicionDe(tipo).campos.map((campo) => (
-            <div key={campo.nombre}>
-              <label className="block text-sm font-medium">{campo.etiqueta}</label>
-              <CampoInput campo={campo} valor={valores[campo.nombre]} columnas={columnas} onChange={actualizarValor} />
-            </div>
-          ))}
+        <div className="mt-8 card p-6">
+          <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
+            Configura: {definicionDe(tipo).etiqueta}
+          </h3>
+          <div className="space-y-4">
+            {definicionDe(tipo).campos.map((campo) => (
+              <div key={campo.nombre}>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                  {campo.etiqueta}
+                  {campo.requerido && <span className="ml-1 text-red-400">*</span>}
+                </label>
+                <CampoInput campo={campo} valor={valores[campo.nombre]} columnas={columnas} onChange={actualizarValor} />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+            <span className="text-base">💡</span>
+            <span>Este análisis consume 1 crédito de tu plan.</span>
+          </div>
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
-      <button
-        onClick={enviar}
-        disabled={!tipo || enviando}
-        className="mt-8 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-      >
-        {enviando ? 'Analizando... (puede tardar un minuto)' : 'Analizar'}
+      <button onClick={enviar} disabled={!tipo || enviando} className="btn-primary mt-8 w-full sm:w-auto">
+        {enviando ? (
+          <>
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Analizando... (puede tardar un minuto)
+          </>
+        ) : (
+          'Analizar'
+        )}
       </button>
-    </main>
+    </div>
   );
 }
