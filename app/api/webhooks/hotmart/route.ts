@@ -77,6 +77,7 @@ export async function POST(request: Request) {
 
   const resultado = await processHotmartEvent(payload, buildDeps(), {
     proProductIds: process.env.HOTMART_PRO_PRODUCT_IDS ?? '',
+    recargaProductIds: process.env.HOTMART_RECARGA_PRODUCT_IDS ?? '',
   });
   return NextResponse.json(resultado.body, { status: resultado.status });
 }

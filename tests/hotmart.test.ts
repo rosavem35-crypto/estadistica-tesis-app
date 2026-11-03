@@ -31,6 +31,13 @@ test('planFromProduct: solo los IDs listados son "pro"', () => {
   assert.equal(planFromProduct(undefined, '123,456'), 'basico');
 });
 
+test('planFromProduct: IDs de recarga se detectan como "recarga"', () => {
+  assert.equal(planFromProduct('888', '123', '888,999'), 'recarga');
+  assert.equal(planFromProduct('999', '123', '888,999'), 'recarga');
+  assert.equal(planFromProduct('123', '123', '888,999'), 'pro');
+  assert.equal(planFromProduct('555', '123', '888,999'), 'basico');
+});
+
 function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: string | null }> = {}) {
   const usuarios = new Map<string, { creditosLimite: number; hotmartId: string | null; activeUntil: string | null }>();
   for (const [email, v] of Object.entries(inicial)) {
@@ -73,7 +80,7 @@ test('processHotmartEvent: compra nueva invita y otorga créditos', async () => 
   );
   assert.equal(r.status, 200);
   assert.deepEqual(invitados, ['nueva@x.com']);
-  assert.equal(usuarios.get('nueva@x.com')?.creditosLimite, 20); // plan básico por defecto
+  assert.equal(usuarios.get('nueva@x.com')?.creditosLimite, 30); // plan básico por defecto
 });
 
 test('processHotmartEvent: suma créditos a los que ya tenía (acumulativo)', async () => {
@@ -85,7 +92,7 @@ test('processHotmartEvent: suma créditos a los que ya tenía (acumulativo)', as
     },
     deps
   );
-  assert.equal(usuarios.get('ya@x.com')?.creditosLimite, 30);
+  assert.equal(usuarios.get('ya@x.com')?.creditosLimite, 40); // 10 existentes + 30 del plan básico
 });
 
 test('processHotmartEvent: dedup por transaction id (APPROVED + COMPLETE)', async () => {
@@ -111,7 +118,20 @@ test('processHotmartEvent: plan "pro" otorga más créditos', async () => {
     deps,
     { proProductIds: '777' }
   );
-  assert.equal(usuarios.get('pro@x.com')?.creditosLimite, 60);
+  assert.equal(usuarios.get('pro@x.com')?.creditosLimite, 80);
+});
+
+test('processHotmartEvent: recarga suma 10 créditos al saldo existente', async () => {
+  const { deps, usuarios } = fakeDeps({ 'rec@x.com': { creditosLimite: 25, hotmartId: 'TX0' } });
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: { buyer: { email: 'rec@x.com' }, purchase: { transaction: 'TX-REC' }, product: { id: '888' } },
+    },
+    deps,
+    { recargaProductIds: '888' }
+  );
+  assert.equal(usuarios.get('rec@x.com')?.creditosLimite, 35); // 25 + 10
 });
 
 test('processHotmartEvent: reembolso revoca el acceso', async () => {

@@ -21,6 +21,7 @@ export interface HotmartResult {
 
 export interface ProcessOptions {
   proProductIds?: string;
+  recargaProductIds?: string;
   now?: Date;
 }
 
@@ -63,7 +64,7 @@ export async function processHotmartEvent(
       return { status: 200, body: { ok: true, reason: 'duplicado (mismo transaction id)' } };
     }
 
-    const plan = planFromProduct(productId, options.proProductIds ?? '');
+    const plan = planFromProduct(productId, options.proProductIds ?? '', options.recargaProductIds ?? '');
     const creditosNuevos = (estado?.creditosLimite ?? 0) + PLAN_LIMITS[plan].creditosLimite;
     await deps.saveUser({
       userId,

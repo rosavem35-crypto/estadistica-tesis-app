@@ -10,8 +10,9 @@ interface UsageData {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  basico: 'Básico',
-  pro: 'Pro',
+  basico: 'Investigador',
+  pro: 'Investigador Pro',
+  recarga: 'Recarga',
   admin: 'Admin',
 };
 
