@@ -59,7 +59,7 @@ function buildDeps(): HotmartDeps {
       await admin.from('users').update({ active_until: iso }).eq('id', userId);
     },
     async onUserCreated({ email, name, password, plan, creditos }) {
-      const raw = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
+      const raw = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
       const appUrl = raw.startsWith('https://') ? raw : 'https://estadistica-tesis-app-p3bx.vercel.app';
       if (password) {
         await sendCredentialsEmail({ to: email, name, password, plan, creditos, appUrl });
