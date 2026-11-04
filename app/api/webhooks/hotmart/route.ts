@@ -75,9 +75,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Firma inválida.' }, { status: 401 });
   }
 
-  const resultado = await processHotmartEvent(payload, buildDeps(), {
+  const options = {
     proProductIds: process.env.HOTMART_PRO_PRODUCT_IDS ?? '',
     recargaProductIds: process.env.HOTMART_RECARGA_PRODUCT_IDS ?? '',
-  });
+  };
+
+  console.log('[hotmart-webhook]', JSON.stringify({
+    event: (payload as any)?.event,
+    email: (payload as any)?.data?.buyer?.email,
+    productId: (payload as any)?.data?.product?.id,
+    offerCode: (payload as any)?.data?.purchase?.offer?.code ?? (payload as any)?.data?.purchase?.offer_code,
+    transaction: (payload as any)?.data?.purchase?.transaction,
+    proIds: options.proProductIds,
+    recargaIds: options.recargaProductIds,
+  }));
+
+  const resultado = await processHotmartEvent(payload, buildDeps(), options);
+
+  console.log('[hotmart-webhook] resultado:', JSON.stringify(resultado));
+
   return NextResponse.json(resultado.body, { status: resultado.status });
 }
