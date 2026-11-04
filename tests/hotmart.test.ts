@@ -38,6 +38,13 @@ test('planFromProduct: IDs de recarga se detectan como "recarga"', () => {
   assert.equal(planFromProduct('555', '123', '888,999'), 'basico');
 });
 
+test('planFromProduct: offer code tiene prioridad sobre product ID', () => {
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', 'j5of7xB3'), 'pro');
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', 'kzv3vxcy'), 'recarga');
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', 'lgmw07ha'), 'basico');
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', null), 'basico');
+});
+
 function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: string | null }> = {}) {
   const usuarios = new Map<string, { creditosLimite: number; hotmartId: string | null; activeUntil: string | null }>();
   for (const [email, v] of Object.entries(inicial)) {
@@ -151,6 +158,56 @@ test('processHotmartEvent: evento desconocido se ignora con 200', async () => {
   const r = await processHotmartEvent({ event: 'SUBSCRIPTION_CANCELLATION', data: {} }, deps);
   assert.equal(r.status, 200);
   assert.equal(r.body.ignored, 'SUBSCRIPTION_CANCELLATION');
+});
+
+test('processHotmartEvent: offer code distingue plan dentro del mismo producto', async () => {
+  const { deps, usuarios } = fakeDeps({ 'user@x.com': { creditosLimite: 5, hotmartId: 'TX0' } });
+  // Compra con offer code de "pro" (j5of7xB3) — mismo product ID para todos
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: {
+        buyer: { email: 'user@x.com' },
+        purchase: { transaction: 'TX-PRO', offer: { code: 'j5of7xB3' } },
+        product: { id: '8881343' },
+      },
+    },
+    deps,
+    { proProductIds: 'j5of7xB3', recargaProductIds: 'kzv3vxcy' }
+  );
+  assert.equal(usuarios.get('user@x.com')?.creditosLimite, 85); // 5 + 80 (pro)
+
+  // Compra con offer code de "recarga" (kzv3vxcy)
+  const { deps: deps2, usuarios: u2 } = fakeDeps({ 'r@x.com': { creditosLimite: 20, hotmartId: 'TX0' } });
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: {
+        buyer: { email: 'r@x.com' },
+        purchase: { transaction: 'TX-REC2', offer: { code: 'kzv3vxcy' } },
+        product: { id: '8881343' },
+      },
+    },
+    deps2,
+    { proProductIds: 'j5of7xB3', recargaProductIds: 'kzv3vxcy' }
+  );
+  assert.equal(u2.get('r@x.com')?.creditosLimite, 30); // 20 + 10 (recarga)
+
+  // Compra con offer code base (lgmw07ha) → default 'basico'
+  const { deps: deps3, usuarios: u3 } = fakeDeps();
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: {
+        buyer: { email: 'new@x.com' },
+        purchase: { transaction: 'TX-BAS', offer: { code: 'lgmw07ha' } },
+        product: { id: '8881343' },
+      },
+    },
+    deps3,
+    { proProductIds: 'j5of7xB3', recargaProductIds: 'kzv3vxcy' }
+  );
+  assert.equal(u3.get('new@x.com')?.creditosLimite, 30); // 30 (basico)
 });
 
 test('processHotmartEvent: falta el email del comprador -> 400', async () => {

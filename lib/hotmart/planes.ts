@@ -5,9 +5,13 @@
  * Modelo de negocio: pago único + acceso de por vida. Los créditos se
  * consumen (1 análisis = 1 crédito) y se pueden recargar.
  *
- *   Investigador:     $29 USD → 30 análisis
- *   Investigador Pro: $49 USD → 80 análisis
- *   Recarga:          $5 USD  → 10 análisis (se suman a los existentes)
+ *   Investigador:     $29 USD → 30 análisis  (oferta base / default)
+ *   Investigador Pro: $49 USD → 80 análisis  (oferta "Investigador Pro")
+ *   Recarga:          $5 USD  → 10 análisis  (oferta "Recarga de créditos")
+ *
+ * Como los 3 precios son ofertas dentro de un MISMO producto de Hotmart
+ * (ID 8881343), se distinguen por el código de oferta
+ * (data.purchase.offer.code), no por product ID.
  */
 export type Plan = 'basico' | 'pro' | 'recarga';
 
@@ -24,23 +28,28 @@ export const PLAN_LIMITS: Record<Plan, { creditosLimite: number }> = {
 };
 
 /**
- * Determina el plan a partir del Product ID de Hotmart.
+ * Determina el plan a partir de:
+ *   1. Offer code (prioridad) — distingue ofertas dentro del mismo producto
+ *   2. Product ID (fallback) — por si se usan productos separados
  *
- * - IDs en HOTMART_PRO_PRODUCT_IDS  → 'pro'
- * - IDs en HOTMART_RECARGA_PRODUCT_IDS → 'recarga'
- * - Cualquier otro                  → 'basico'
+ * Cualquier compra que no matchee con pro ni recarga se trata como 'basico'.
  */
 export function planFromProduct(
   productId: string | number | null | undefined,
   proIds: string,
   recargaIds?: string,
+  offerCode?: string | null,
 ): Plan {
+  const offer = offerCode ? offerCode.trim() : '';
   const id = productId != null ? String(productId) : '';
+
   const proList = proIds.split(',').map((s) => s.trim()).filter(Boolean);
-  if (id && proList.includes(id)) return 'pro';
+  if ((offer && proList.includes(offer)) || (id && proList.includes(id))) return 'pro';
+
   if (recargaIds) {
     const recargaList = recargaIds.split(',').map((s) => s.trim()).filter(Boolean);
-    if (id && recargaList.includes(id)) return 'recarga';
+    if ((offer && recargaList.includes(offer)) || (id && recargaList.includes(id))) return 'recarga';
   }
+
   return 'basico';
 }

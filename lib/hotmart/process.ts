@@ -47,6 +47,9 @@ export async function processHotmartEvent(
     const nombre: string | undefined = payload?.data?.buyer?.name;
     const transactionId: string | undefined = payload?.data?.purchase?.transaction;
     const productId = payload?.data?.product?.id;
+    const offerCode: string | undefined =
+      payload?.data?.purchase?.offer?.code ??
+      payload?.data?.purchase?.offer_code;
     if (!email) return { status: 400, body: { ok: false, reason: 'Falta el email del comprador.' } };
 
     let userId = await deps.findUserIdByEmail(email);
@@ -64,7 +67,7 @@ export async function processHotmartEvent(
       return { status: 200, body: { ok: true, reason: 'duplicado (mismo transaction id)' } };
     }
 
-    const plan = planFromProduct(productId, options.proProductIds ?? '', options.recargaProductIds ?? '');
+    const plan = planFromProduct(productId, options.proProductIds ?? '', options.recargaProductIds ?? '', offerCode);
     const creditosNuevos = (estado?.creditosLimite ?? 0) + PLAN_LIMITS[plan].creditosLimite;
     await deps.saveUser({
       userId,
