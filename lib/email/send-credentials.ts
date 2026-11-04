@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 
 const FROM_EMAIL = 'EstadísticAI <software@escueladeinvestigacion.com>';
+const REPLY_TO = 'formacion@escueladeinvestigacion.com';
 
 interface CredentialsEmailParams {
   to: string;
@@ -25,67 +26,148 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
   }
 
   const resend = new Resend(apiKey);
-  const greeting = params.name ? `Hola ${params.name}` : 'Hola';
+  const greeting = params.name ? params.name.split(' ')[0] : 'Investigador/a';
   const planLabel = PLAN_LABELS[params.plan] ?? params.plan;
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
+    replyTo: REPLY_TO,
     to: params.to,
-    subject: `Tus credenciales de acceso — EstadísticAI (${planLabel})`,
+    subject: `Bienvenido/a a EstadísticAI — Tus datos de acceso`,
     html: `
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="utf-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background: #f8fafc;">
-  <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #4f46e5; font-size: 24px; margin: 0;">EstadísticAI</h1>
-      <p style="color: #64748b; font-size: 14px; margin: 4px 0 0;">Análisis estadístico asistido por IA</p>
-    </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f0f0f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f5; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
 
-    <p style="font-size: 16px;">${greeting},</p>
-    <p style="font-size: 15px; line-height: 1.6;">
-      Tu compra ha sido procesada exitosamente. Ya puedes acceder a la plataforma
-      con las siguientes credenciales:
-    </p>
+          <!-- Header con gradiente -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 16px 16px 0 0; padding: 40px 32px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">EstadísticAI</h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 400;">Escuela de Investigaci&oacute;n Cient&iacute;fica</p>
+            </td>
+          </tr>
 
-    <div style="background: #f1f5f9; border-radius: 8px; padding: 20px; margin: 24px 0;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">CORREO ELECTRÓNICO</td>
-          <td style="padding: 8px 0; font-size: 15px; font-weight: 600;">${params.to}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">CONTRASEÑA</td>
-          <td style="padding: 8px 0; font-size: 15px; font-weight: 600; font-family: monospace; letter-spacing: 1px;">${params.password}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">PLAN</td>
-          <td style="padding: 8px 0; font-size: 15px;">${planLabel}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">ANÁLISIS DISPONIBLES</td>
-          <td style="padding: 8px 0; font-size: 15px; font-weight: 600; color: #4f46e5;">${params.creditos}</td>
-        </tr>
-      </table>
-    </div>
+          <!-- Cuerpo -->
+          <tr>
+            <td style="background: #ffffff; padding: 36px 32px 20px;">
+              <p style="margin: 0 0 20px; font-size: 17px; color: #1e293b; line-height: 1.5;">
+                Hola <strong>${greeting}</strong>,
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; color: #475569; line-height: 1.7;">
+                Tu compra del plan <strong>${planLabel}</strong> ha sido procesada exitosamente.
+                A continuaci&oacute;n encontrar&aacute;s tus datos de acceso a la plataforma de
+                an&aacute;lisis estad&iacute;stico asistido por inteligencia artificial.
+              </p>
 
-    <div style="text-align: center; margin: 28px 0;">
-      <a href="${params.appUrl}" style="display: inline-block; background: #4f46e5; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
-        Acceder a EstadísticAI
-      </a>
-    </div>
+              <!-- Tarjeta de credenciales -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <tr>
+                  <td style="padding: 20px 24px 8px;">
+                    <p style="margin: 0; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">Datos de acceso</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0 24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Correo electr&oacute;nico</p>
+                          <p style="margin: 0; font-size: 15px; color: #1e293b; font-weight: 600;">${params.to}</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Contrase&ntilde;a temporal</p>
+                          <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; background: #eef2ff; display: inline-block; padding: 6px 14px; border-radius: 6px;">${params.password}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 24px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="50%">
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Plan</p>
+                          <p style="margin: 0; font-size: 14px; color: #1e293b; font-weight: 600;">${planLabel}</p>
+                        </td>
+                        <td width="50%">
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">An&aacute;lisis disponibles</p>
+                          <p style="margin: 0; font-size: 22px; color: #4f46e5; font-weight: 700;">${params.creditos}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <p style="font-size: 13px; color: #94a3b8; line-height: 1.5;">
-      Te recomendamos cambiar tu contraseña después de tu primer inicio de sesión.
-      Si tienes alguna duda, responde a este correo.
-    </p>
-  </div>
+          <!-- Bot&oacute;n CTA -->
+          <tr>
+            <td style="background: #ffffff; padding: 8px 32px 36px; text-align: center;">
+              <a href="${params.appUrl}/iniciar-sesion" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 10px; font-size: 16px; font-weight: 700; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(79,70,229,0.35);">
+                Ingresar a la plataforma &rarr;
+              </a>
+              <p style="margin: 16px 0 0; font-size: 13px; color: #94a3b8;">
+                Copia tu correo y contrase&ntilde;a, luego haz clic en el bot&oacute;n
+              </p>
+            </td>
+          </tr>
 
-  <p style="text-align: center; font-size: 12px; color: #94a3b8; margin-top: 20px;">
-    Escuela de Investigación Científica<br>
-    Este correo fue enviado porque realizaste una compra en nuestra plataforma.
-  </p>
+          <!-- Instrucciones -->
+          <tr>
+            <td style="background: #ffffff; padding: 0 32px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #92400e;">Primeros pasos</p>
+                    <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350f; line-height: 1.8;">
+                      <li>Haz clic en <em>&ldquo;Ingresar a la plataforma&rdquo;</em></li>
+                      <li>Ingresa tu correo y contrase&ntilde;a temporal</li>
+                      <li>Sube tu archivo de datos (Excel o CSV)</li>
+                      <li>Selecciona el tipo de an&aacute;lisis y obt&eacute;n tu informe APA 7</li>
+                    </ol>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Separador + footer -->
+          <tr>
+            <td style="background: #ffffff; border-radius: 0 0 16px 16px; padding: 0 32px 32px;">
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 20px;">
+              <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center;">
+                Te recomendamos cambiar tu contrase&ntilde;a despu&eacute;s de tu primer inicio de sesi&oacute;n.<br>
+                Si tienes alguna pregunta, responde directamente a este correo.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Branding -->
+          <tr>
+            <td style="padding: 24px 32px; text-align: center;">
+              <p style="margin: 0 0 4px; font-size: 13px; color: #64748b; font-weight: 600;">Escuela de Investigaci&oacute;n Cient&iacute;fica</p>
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                &copy; ${new Date().getFullYear()} EstadísticAI &mdash; An&aacute;lisis estad&iacute;stico asistido por IA
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
     `.trim(),
