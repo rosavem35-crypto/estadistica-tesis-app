@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyHotmartSignature } from '@/lib/hotmart/verify';
 import { processHotmartEvent, type HotmartDeps } from '@/lib/hotmart/process';
+import { sendCredentialsEmail } from '@/lib/email/send-credentials';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -29,15 +31,19 @@ function buildDeps(): HotmartDeps {
       return { creditosLimite: data.creditos_limite, hotmartId: data.hotmart_id };
     },
     async inviteUser(email, name) {
-      const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-        data: name ? { name } : undefined,
+      const password = randomBytes(4).toString('hex');
+      const { data, error } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: name ? { name } : undefined,
       });
-      if (error || !data.user) return null;
-      // El trigger handle_new_user() (ver migración 002) ya crea la fila en
-      // public.users; solo sincronizamos el email por si el trigger no lo
-      // tuviera disponible en ese momento.
+      if (error || !data.user) {
+        console.error('[hotmart-webhook] createUser error:', error?.message);
+        return null;
+      }
       await admin.from('users').update({ email }).eq('id', data.user.id);
-      return data.user.id;
+      return { userId: data.user.id, password };
     },
     async saveUser({ userId, plan, creditosLimite, hotmartId, activeUntilIso }) {
       const { error } = await admin
@@ -51,6 +57,12 @@ function buildDeps(): HotmartDeps {
     },
     async setActiveUntil(userId, iso) {
       await admin.from('users').update({ active_until: iso }).eq('id', userId);
+    },
+    async onUserCreated({ email, name, password, plan, creditos }) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://estadistica-tesis-app-p3bx.vercel.app';
+      if (password) {
+        await sendCredentialsEmail({ to: email, name, password, plan, creditos, appUrl });
+      }
     },
   };
 }

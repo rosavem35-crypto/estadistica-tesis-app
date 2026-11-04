@@ -62,7 +62,7 @@ function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: s
     async inviteUser(email) {
       usuarios.set(email, { creditosLimite: 0, hotmartId: null, activeUntil: null });
       invitados.push(email);
-      return email;
+      return { userId: email, password: 'test1234' };
     },
     async saveUser({ userId, creditosLimite, hotmartId, activeUntilIso }) {
       const u = usuarios.get(userId)!;

@@ -9,9 +9,10 @@ const REVOKE_EVENTS = new Set(['PURCHASE_CANCELED', 'PURCHASE_REFUNDED', 'PURCHA
 export interface HotmartDeps {
   findUserIdByEmail(email: string): Promise<string | null>;
   getUserState(userId: string): Promise<{ creditosLimite: number; hotmartId: string | null } | null>;
-  inviteUser(email: string, name: string | null): Promise<string | null>;
+  inviteUser(email: string, name: string | null): Promise<{ userId: string; password: string | null } | null>;
   saveUser(record: { userId: string; plan: Plan; creditosLimite: number; hotmartId: string; activeUntilIso: string }): Promise<void>;
   setActiveUntil(userId: string, iso: string | null): Promise<void>;
+  onUserCreated?(info: { email: string; name: string | null; password: string | null; plan: Plan; creditos: number }): Promise<void>;
 }
 
 export interface HotmartResult {
@@ -53,8 +54,15 @@ export async function processHotmartEvent(
     if (!email) return { status: 400, body: { ok: false, reason: 'Falta el email del comprador.' } };
 
     let userId = await deps.findUserIdByEmail(email);
+    let isNewUser = false;
+    let generatedPassword: string | null = null;
     if (!userId) {
-      userId = await deps.inviteUser(email, nombre ?? null);
+      const result = await deps.inviteUser(email, nombre ?? null);
+      if (result) {
+        userId = result.userId;
+        generatedPassword = result.password;
+        isNewUser = true;
+      }
     }
     if (!userId) {
       return { status: 500, body: { ok: false, reason: 'No se pudo crear o encontrar el usuario.' } };
@@ -62,8 +70,6 @@ export async function processHotmartEvent(
 
     const estado = await deps.getUserState(userId);
     if (transactionId && estado?.hotmartId === transactionId) {
-      // Hotmart suele enviar PURCHASE_APPROVED y luego PURCHASE_COMPLETE para
-      // la misma compra — no duplicar el otorgamiento de créditos.
       return { status: 200, body: { ok: true, reason: 'duplicado (mismo transaction id)' } };
     }
 
@@ -76,6 +82,11 @@ export async function processHotmartEvent(
       hotmartId: transactionId ?? '',
       activeUntilIso: addDaysIso(now, LIFETIME_ACCESS_DAYS),
     });
+
+    if (isNewUser && deps.onUserCreated) {
+      await deps.onUserCreated({ email, name: nombre ?? null, password: generatedPassword, plan, creditos: creditosNuevos });
+    }
+
     return { status: 200, body: { ok: true } };
   }
 
