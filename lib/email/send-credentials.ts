@@ -85,7 +85,7 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
                       </tr>
                       <tr>
                         <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Contrase&ntilde;a temporal</p>
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Contrase&ntilde;a</p>
                           <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; background: #eef2ff; display: inline-block; padding: 6px 14px; border-radius: 6px;">${params.password}</p>
                         </td>
                       </tr>
@@ -148,7 +148,7 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
             <td style="background: #ffffff; border-radius: 0 0 16px 16px; padding: 0 32px 32px;">
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 20px;">
               <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center;">
-                Te recomendamos cambiar tu contrase&ntilde;a despu&eacute;s de tu primer inicio de sesi&oacute;n.<br>
+                Tu contrase&ntilde;a es permanente. Si deseas cambiarla, puedes hacerlo desde la plataforma.<br>
                 Si tienes alguna pregunta, responde directamente a este correo.
               </p>
             </td>
