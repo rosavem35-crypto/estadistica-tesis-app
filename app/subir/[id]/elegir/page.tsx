@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ANALISIS_DISPONIBLES, ETIQUETAS_CATEGORIA, definicionDe, type DefinicionAnalisis } from '@/lib/engine/decisionTree';
 import { CampoInput } from '@/components/analisis/CampoInput';
+import { RecargaBanner } from '@/components/layout/RecargaBanner';
 import type { PerfilColumna, TipoAnalisis } from '@/types/analisis';
 
 const OPCIONES = ANALISIS_DISPONIBLES.filter((d) => d.requiereArchivo);
@@ -129,6 +130,10 @@ export default function ElegirPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <RecargaBanner />
+      </div>
 
       {error && (
         <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">

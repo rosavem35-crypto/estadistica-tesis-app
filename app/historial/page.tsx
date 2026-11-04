@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ANALISIS_DISPONIBLES } from '@/lib/engine/decisionTree';
+import { RecargaBanner } from '@/components/layout/RecargaBanner';
 
 interface FilaHistorial {
   id: string;
@@ -47,6 +48,10 @@ export default function HistorialPage() {
         <Link href="/subir" className="btn-primary hidden sm:inline-flex">
           Nuevo análisis
         </Link>
+      </div>
+
+      <div className="mb-6">
+        <RecargaBanner />
       </div>
 
       {error && (

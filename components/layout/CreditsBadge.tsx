@@ -16,6 +16,8 @@ const PLAN_LABELS: Record<string, string> = {
   admin: 'Admin',
 };
 
+const RECARGA_URL = process.env.NEXT_PUBLIC_HOTMART_RECARGA_URL;
+
 export function CreditsBadge() {
   const [data, setData] = useState<UsageData | null>(null);
 
@@ -57,7 +59,17 @@ export function CreditsBadge() {
           />
         </div>
       </div>
-      {agotado && (
+      {(agotado || bajo) && RECARGA_URL && (
+        <a
+          href={RECARGA_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+        >
+          {agotado ? 'Recargar' : '+ Créditos'}
+        </a>
+      )}
+      {agotado && !RECARGA_URL && (
         <span className="text-[10px] font-medium text-red-500">Sin créditos</span>
       )}
     </div>
