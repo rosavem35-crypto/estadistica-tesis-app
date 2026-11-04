@@ -40,10 +40,14 @@ function buildDeps(): HotmartDeps {
       return data.user.id;
     },
     async saveUser({ userId, plan, creditosLimite, hotmartId, activeUntilIso }) {
-      await admin
+      const { error } = await admin
         .from('users')
         .update({ plan, creditos_limite: creditosLimite, hotmart_id: hotmartId, active_until: activeUntilIso })
         .eq('id', userId);
+      if (error) {
+        console.error('[hotmart-webhook] saveUser error:', JSON.stringify(error));
+        throw new Error(`saveUser failed: ${error.message}`);
+      }
     },
     async setActiveUntil(userId, iso) {
       await admin.from('users').update({ active_until: iso }).eq('id', userId);
