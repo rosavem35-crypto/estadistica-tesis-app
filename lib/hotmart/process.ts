@@ -83,8 +83,12 @@ export async function processHotmartEvent(
       activeUntilIso: addDaysIso(now, LIFETIME_ACCESS_DAYS),
     });
 
-    if (isNewUser && deps.onUserCreated) {
-      await deps.onUserCreated({ email, name: nombre ?? null, password: generatedPassword, plan, creditos: creditosNuevos });
+    if (deps.onUserCreated) {
+      try {
+        await deps.onUserCreated({ email, name: nombre ?? null, password: isNewUser ? generatedPassword : null, plan, creditos: creditosNuevos });
+      } catch (err) {
+        console.error('[hotmart] onUserCreated error (credits already saved):', err);
+      }
     }
 
     return { status: 200, body: { ok: true } };

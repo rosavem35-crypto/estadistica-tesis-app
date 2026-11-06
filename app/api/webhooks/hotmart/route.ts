@@ -61,9 +61,8 @@ function buildDeps(): HotmartDeps {
     async onUserCreated({ email, name, password, plan, creditos }) {
       const raw = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '').trim();
       const appUrl = raw.startsWith('https://') ? raw : 'https://estadistica-tesis-app-p3bx.vercel.app';
-      if (password) {
-        await sendCredentialsEmail({ to: email, name, password, plan, creditos, appUrl });
-      }
+      console.log('[hotmart-webhook] sending email to', email, { isNew: !!password, plan, creditos });
+      await sendCredentialsEmail({ to: email, name, password, plan, creditos, appUrl });
     },
   };
 }

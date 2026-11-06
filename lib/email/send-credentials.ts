@@ -6,7 +6,7 @@ const REPLY_TO = 'formacion@escueladeinvestigacion.com';
 interface CredentialsEmailParams {
   to: string;
   name: string | null;
-  password: string;
+  password: string | null;
   plan: string;
   creditos: number;
   appUrl: string;
@@ -29,11 +29,60 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
   const greeting = params.name ? params.name.split(' ')[0] : 'Investigador/a';
   const planLabel = PLAN_LABELS[params.plan] ?? params.plan;
 
+  const isNewUser = !!params.password;
+  const subject = isNewUser
+    ? 'Bienvenido/a a EstadísticAI — Tus datos de acceso'
+    : `EstadísticAI — ${params.creditos} análisis acreditados a tu cuenta`;
+
+  const introText = isNewUser
+    ? `Tu compra del plan <strong>${planLabel}</strong> ha sido procesada exitosamente.
+                A continuaci&oacute;n encontrar&aacute;s tus datos de acceso a la plataforma de
+                an&aacute;lisis estad&iacute;stico asistido por inteligencia artificial.`
+    : `Se han acreditado <strong>${params.creditos} an&aacute;lisis</strong> a tu cuenta
+                con el plan <strong>${planLabel}</strong>. Ya puedes usarlos desde la plataforma.`;
+
+  const passwordRow = isNewUser
+    ? `<tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Contrase&ntilde;a</p>
+                          <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; background: #eef2ff; display: inline-block; padding: 6px 14px; border-radius: 6px;">${params.password}</p>
+                        </td>
+                      </tr>`
+    : '';
+
+  const ctaSubtext = isNewUser
+    ? 'Copia tu correo y contrase&ntilde;a, luego haz clic en el bot&oacute;n'
+    : 'Ingresa con tu correo y contrase&ntilde;a habitual';
+
+  const stepsHtml = isNewUser
+    ? `<tr>
+            <td style="background: #ffffff; padding: 0 32px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #92400e;">Primeros pasos</p>
+                    <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350f; line-height: 1.8;">
+                      <li>Haz clic en <em>&ldquo;Ingresar a la plataforma&rdquo;</em></li>
+                      <li>Ingresa tu correo y contrase&ntilde;a</li>
+                      <li>Sube tu archivo de datos (Excel o CSV)</li>
+                      <li>Selecciona el tipo de an&aacute;lisis y obt&eacute;n tu informe APA 7</li>
+                    </ol>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+    : '';
+
+  const footerText = isNewUser
+    ? 'Tu contrase&ntilde;a es permanente. Si deseas cambiarla, puedes hacerlo desde la plataforma.'
+    : 'Tus cr&eacute;ditos se han sumado a los que ya ten&iacute;as.';
+
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     replyTo: REPLY_TO,
     to: params.to,
-    subject: `Bienvenido/a a EstadísticAI — Tus datos de acceso`,
+    subject,
     html: `
 <!DOCTYPE html>
 <html lang="es">
@@ -62,16 +111,14 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
                 Hola <strong>${greeting}</strong>,
               </p>
               <p style="margin: 0 0 24px; font-size: 15px; color: #475569; line-height: 1.7;">
-                Tu compra del plan <strong>${planLabel}</strong> ha sido procesada exitosamente.
-                A continuaci&oacute;n encontrar&aacute;s tus datos de acceso a la plataforma de
-                an&aacute;lisis estad&iacute;stico asistido por inteligencia artificial.
+                ${introText}
               </p>
 
               <!-- Tarjeta de credenciales -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                 <tr>
                   <td style="padding: 20px 24px 8px;">
-                    <p style="margin: 0; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">Datos de acceso</p>
+                    <p style="margin: 0; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">${isNewUser ? 'Datos de acceso' : 'Tu cuenta'}</p>
                   </td>
                 </tr>
                 <tr>
@@ -83,12 +130,7 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
                           <p style="margin: 0; font-size: 15px; color: #1e293b; font-weight: 600;">${params.to}</p>
                         </td>
                       </tr>
-                      <tr>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                          <p style="margin: 0 0 2px; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Contrase&ntilde;a</p>
-                          <p style="margin: 0; font-size: 18px; color: #1e293b; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; background: #eef2ff; display: inline-block; padding: 6px 14px; border-radius: 6px;">${params.password}</p>
-                        </td>
-                      </tr>
+                      ${passwordRow}
                     </table>
                   </td>
                 </tr>
@@ -119,36 +161,20 @@ export async function sendCredentialsEmail(params: CredentialsEmailParams): Prom
                 Ingresar a la plataforma &rarr;
               </a>
               <p style="margin: 16px 0 0; font-size: 13px; color: #94a3b8;">
-                Copia tu correo y contrase&ntilde;a, luego haz clic en el bot&oacute;n
+                ${ctaSubtext}
               </p>
             </td>
           </tr>
 
-          <!-- Instrucciones -->
-          <tr>
-            <td style="background: #ffffff; padding: 0 32px 32px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px;">
-                <tr>
-                  <td style="padding: 16px 20px;">
-                    <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #92400e;">Primeros pasos</p>
-                    <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #78350f; line-height: 1.8;">
-                      <li>Haz clic en <em>&ldquo;Ingresar a la plataforma&rdquo;</em></li>
-                      <li>Ingresa tu correo y contrase&ntilde;a temporal</li>
-                      <li>Sube tu archivo de datos (Excel o CSV)</li>
-                      <li>Selecciona el tipo de an&aacute;lisis y obt&eacute;n tu informe APA 7</li>
-                    </ol>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+          <!-- Instrucciones (solo nuevos usuarios) -->
+          ${stepsHtml}
 
           <!-- Separador + footer -->
           <tr>
             <td style="background: #ffffff; border-radius: 0 0 16px 16px; padding: 0 32px 32px;">
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 20px;">
               <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center;">
-                Tu contrase&ntilde;a es permanente. Si deseas cambiarla, puedes hacerlo desde la plataforma.<br>
+                ${footerText}<br>
                 Si tienes alguna pregunta, responde directamente a este correo.
               </p>
             </td>
