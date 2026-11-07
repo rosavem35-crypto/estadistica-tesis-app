@@ -45,6 +45,12 @@ test('planFromProduct: offer code tiene prioridad sobre product ID', () => {
   assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', null), 'basico');
 });
 
+test('planFromProduct: comparación case-insensitive de offer codes', () => {
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', 'J5OF7XB3'), 'pro');
+  assert.equal(planFromProduct('8881343', 'J5OF7XB3', 'kzv3vxcy', 'j5of7xb3'), 'pro');
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'KZV3VXCY', 'kzv3vxcy'), 'recarga');
+});
+
 function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: string | null }> = {}) {
   const usuarios = new Map<string, { creditosLimite: number; hotmartId: string | null; activeUntil: string | null }>();
   for (const [email, v] of Object.entries(inicial)) {
@@ -73,7 +79,11 @@ function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: s
       if (u) usuarios.set(userId, { ...u, activeUntil: iso });
     },
   };
-  return { deps, usuarios, invitados };
+  const emailsSent: { email: string; password: string | null }[] = [];
+  deps.onUserCreated = async ({ email, password }) => {
+    emailsSent.push({ email, password });
+  };
+  return { deps, usuarios, invitados, emailsSent };
 }
 
 test('processHotmartEvent: compra nueva invita y otorga créditos', async () => {
@@ -208,6 +218,34 @@ test('processHotmartEvent: offer code distingue plan dentro del mismo producto',
     { proProductIds: 'j5of7xB3', recargaProductIds: 'kzv3vxcy' }
   );
   assert.equal(u3.get('new@x.com')?.creditosLimite, 30); // 30 (basico)
+});
+
+test('processHotmartEvent: email se envía a usuarios nuevos con contraseña', async () => {
+  const { deps, emailsSent } = fakeDeps();
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: { buyer: { email: 'nuevo@x.com' }, purchase: { transaction: 'TX-N' }, product: { id: '999' } },
+    },
+    deps
+  );
+  assert.equal(emailsSent.length, 1);
+  assert.equal(emailsSent[0].email, 'nuevo@x.com');
+  assert.equal(emailsSent[0].password, 'test1234');
+});
+
+test('processHotmartEvent: email se envía a usuarios existentes sin contraseña', async () => {
+  const { deps, emailsSent } = fakeDeps({ 'viejo@x.com': { creditosLimite: 10, hotmartId: 'TX0' } });
+  await processHotmartEvent(
+    {
+      event: 'PURCHASE_APPROVED',
+      data: { buyer: { email: 'viejo@x.com' }, purchase: { transaction: 'TX-V' }, product: { id: '999' } },
+    },
+    deps
+  );
+  assert.equal(emailsSent.length, 1);
+  assert.equal(emailsSent[0].email, 'viejo@x.com');
+  assert.equal(emailsSent[0].password, null);
 });
 
 test('processHotmartEvent: falta el email del comprador -> 400', async () => {
