@@ -40,14 +40,14 @@ export function planFromProduct(
   recargaIds?: string,
   offerCode?: string | null,
 ): Plan {
-  const offer = offerCode ? offerCode.trim() : '';
-  const id = productId != null ? String(productId) : '';
+  const offer = offerCode ? offerCode.trim().toLowerCase() : '';
+  const id = productId != null ? String(productId).trim().toLowerCase() : '';
 
-  const proList = proIds.split(',').map((s) => s.trim()).filter(Boolean);
+  const proList = proIds.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   if ((offer && proList.includes(offer)) || (id && proList.includes(id))) return 'pro';
 
   if (recargaIds) {
-    const recargaList = recargaIds.split(',').map((s) => s.trim()).filter(Boolean);
+    const recargaList = recargaIds.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
     if ((offer && recargaList.includes(offer)) || (id && recargaList.includes(id))) return 'recarga';
   }
 

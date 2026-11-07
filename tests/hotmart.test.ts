@@ -45,6 +45,12 @@ test('planFromProduct: offer code tiene prioridad sobre product ID', () => {
   assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', null), 'basico');
 });
 
+test('planFromProduct: comparación case-insensitive de offer codes', () => {
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'kzv3vxcy', 'J5OF7XB3'), 'pro');
+  assert.equal(planFromProduct('8881343', 'J5OF7XB3', 'kzv3vxcy', 'j5of7xb3'), 'pro');
+  assert.equal(planFromProduct('8881343', 'j5of7xB3', 'KZV3VXCY', 'kzv3vxcy'), 'recarga');
+});
+
 function fakeDeps(inicial: Record<string, { creditosLimite: number; hotmartId: string | null }> = {}) {
   const usuarios = new Map<string, { creditosLimite: number; hotmartId: string | null; activeUntil: string | null }>();
   for (const [email, v] of Object.entries(inicial)) {
